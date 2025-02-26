@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Subir Archivo</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            text-align: center;
+        }
+        .drop-zone {
+            width: 80%;
+            max-width: 400px;
+            padding: 50px;
+            border: 2px dashed #007bff;
+            margin: 20px auto;
+            cursor: pointer;
+            color: #007bff;
+        }
+        .drop-zone.highlight {
+            background-color: #f0f8ff;
+        }
+        .hidden {
+            display: none;
+        }
+        .processing {
+            font-size: 18px;
+            color: #ff4500;
+        }
+        #file-name {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Subir Archivo para Segmentación</h1>
+
+    <!-- Formulario de carga de archivos -->
+    <form id="upload-form" method="post" action="/upload" enctype="multipart/form-data">
+        <div id="drop-zone" class="drop-zone">
+            <span id="drop-text">Arrastra y suelta tu archivo aquí o haz clic para seleccionar uno</span>
+            <input type="file" id="file-input" name="file" required hidden>
+        </div>
+        <p id="file-name" class="hidden"></p> <!-- Aquí se mostrará el nombre del archivo -->
+
+        <br>
+        <label for="size">Tamaño de cada segmento (bytes):</label>
+        <input type="number" id="size" name="size" required>
+        <br><br>
+        <button type="submit">Procesar</button>
+    </form>
+
+    <!-- Mensaje de procesamiento -->
+    <p id="processing-message" class="hidden processing">Procesando Archivo...</p>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileNameDisplay = document.getElementById('file-name');
+        const form = document.getElementById('upload-form');
+        const processingMessage = document.getElementById('processing-message');
+
+        // Manejar clic en drop zone
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        // Manejar "Drag & Drop"
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('highlight');
+        });
+
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('highlight'));
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('highlight');
+
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                updateFileName(fileInput.files[0].name);
+            }
+        });
+
+        // Mostrar el nombre del archivo al seleccionarlo manualmente
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                updateFileName(fileInput.files[0].name);
+            }
+        });
+
+        function updateFileName(name) {
+            fileNameDisplay.textContent = "Archivo seleccionado: " + name;
+            fileNameDisplay.classList.remove('hidden');
+        }
+
+        // Mostrar mensaje de "Procesando Archivo" al enviar
+        form.addEventListener('submit', () => {
+            processingMessage.classList.remove('hidden');
+        });
+    </script>
+
+</body>
+</html>

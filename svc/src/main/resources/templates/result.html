@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Resultado - Segmentos Generados</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            text-align: center;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        form {
+            margin-top: 20px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Segmentos generados para <span th:text="${originalName}"></span></h1>
+    
+    <h2>Archivos generados:</h2>
+    <ul id="fileList">
+        <li th:each="file : ${segments}">
+            <a th:href="@{'/download/' + ${file.name}}" th:text="${file.name}"></a>
+            <input type="hidden" name="segments" th:value="${file.getName()}" />
+        </li>
+    </ul>
+
+    <!-- Formulario para recombinar los archivos -->
+    <h2>Puede Recombinar Archivos:</h2>
+    <form id="mergeForm" action="/merge" method="post">
+        <input type="hidden" name="originalName" th:value="${originalName}">
+        <button type="submit" id="combineButton" disabled>Recombinar Archivo</button>
+    </form>
+
+    <!-- Formulario para enviar los archivos por correo -->
+    <h2>ó Enviar archivos por correo:</h2>
+    <form method="post" action="/send-email">
+        <input type="email" name="email" placeholder="Correo destinatario" required>
+        <input type="hidden" name="originalName" th:value="${originalName}">
+        <button type="submit" id="emailButton" disabled>Enviar por Correo</button>
+    </form>
+
+    <!-- Mensajes de éxito o error -->
+    <p th:if="${message}" class="success" th:text="${message}"></p>
+    <p th:if="${error}" class="error" th:text="${error}"></p>
+
+    <!-- Link de descarga del archivo recombinado -->
+    <p th:if="${recombinedFileName}">
+        <a th:href="@{'/download/' + ${recombinedFileName}}" th:text="${recombinedFileName}" download></a>
+    </p>
+
+    <br>
+    <a href="/">Subir otro archivo</a>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let fileList = document.querySelector("#fileList"); // La lista de archivos
+            let combineButton = document.getElementById("combineButton");
+            let emailButton = document.getElementById("emailButton");
+
+            // Verificar si hay al menos un <li> dentro del <ul>
+            if (fileList.children.length > 0) {
+                combineButton.removeAttribute("disabled");
+                emailButton.removeAttribute("disabled");
+            }
+        });
+    </script>
+</body>
+</html>
