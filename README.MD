@@ -12,8 +12,8 @@ Antes de instalar y ejecutar la aplicación, asegúrese de tener lo siguiente in
 
 ### 1. Clonar el repositorio
 ```sh
- git clone https://github.com/usuario/proyecto.git
- cd proyecto
+ git clone https://github.com/chcalderon/desafiotickt.git
+ cd desafiotickt/svc
 ```
 
 ### 2. Configurar Gmail para el envío de correos
@@ -47,8 +47,7 @@ java -jar target/svc-0.0.1-SNAPSHOT.jar
 2. Cargue un archivo y defina el tamaño de segmentación
 3. Una vez procesado, podrá:
    - Descargar los segmentos generados
-   - Recombinarlos en un solo archivo
-   - Enviarlos por correo electrónico
+   - Recombinarlos en un solo archivo ó Enviarlos por correo electrónico
 
 ## Problemas Comunes
 
