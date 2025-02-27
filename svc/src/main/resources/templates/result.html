@@ -6,19 +6,30 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
-            padding: 20px;
+            background-color: #f4f4f4;
             text-align: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: auto;
         }
         h1, h2 {
             color: #333;
         }
         ul {
-            list-style-type: none;
+            list-style: none;
             padding: 0;
         }
         li {
             margin: 5px 0;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
         }
         a {
             color: #007bff;
@@ -27,70 +38,144 @@
         a:hover {
             text-decoration: underline;
         }
-        form {
-            margin-top: 20px;
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s;
         }
-        input, button {
-            padding: 10px;
-            margin: 5px;
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
         }
         .success {
             color: green;
+            margin-top: 10px;
         }
         .error {
             color: red;
+            margin-top: 10px;
+        }
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <h1>Segmentos generados para <span th:text="${originalName}"></span></h1>
-    
-    <h2>Archivos generados:</h2>
-    <ul id="fileList">
-        <li th:each="file : ${segments}">
-            <a th:href="@{'/download/' + ${file.name}}" th:text="${file.name}"></a>
-            <input type="hidden" name="segments" th:value="${file.getName()}" />
-        </li>
-    </ul>
+    <div class="container">
+        <h1>Segmentos generados para <span th:text="${originalName}"></span></h1>
+        
+        <h2>Archivos generados:</h2>
+        <ul>
+            <li th:each="file : ${segments}">
+                <a th:href="@{'/download/' + ${file.name}}" th:text="${file.name}"></a>
+            </li>
+        </ul>
 
-    <!-- Formulario para recombinar los archivos -->
-    <h2>Puede Recombinar Archivos:</h2>
-    <form id="mergeForm" action="/merge" method="post">
-        <input type="hidden" name="originalName" th:value="${originalName}">
-        <button type="submit" id="combineButton" disabled>Recombinar Archivo</button>
-    </form>
+        <h2>Recombinar Archivos:</h2>
+        <form id="mergeForm">
+            <input type="hidden" id="originalName" th:value="${originalName}">
+            <button type="submit" id="combineButton">Recombinar Archivo</button>
+        </form>
 
-    <!-- Formulario para enviar los archivos por correo -->
-    <h2>ó Enviar archivos por correo:</h2>
-    <form method="post" action="/send-email">
-        <input type="email" name="email" placeholder="Correo destinatario" required>
-        <input type="hidden" name="originalName" th:value="${originalName}">
-        <button type="submit" id="emailButton" disabled>Enviar por Correo</button>
-    </form>
+        <h2>Enviar archivos por correo:</h2>
+        <form id="emailForm">
+            <input type="email" id="emailInput" name="email" placeholder="Correo destinatario" required>
+            <input type="hidden" id="emailOriginalName" th:value="${originalName}">
+            <button type="submit" id="emailButton">Enviar por Correo</button>
+        </form>
 
-    <!-- Mensajes de éxito o error -->
-    <p th:if="${message}" class="success" th:text="${message}"></p>
-    <p th:if="${error}" class="error" th:text="${error}"></p>
+        <!-- Contenedores para mensajes -->
+        <p id="message" class="success hidden"></p>
+        <p id="error" class="error hidden"></p>
+        
+        <!-- Contenedor donde se mostrará el enlace del archivo recombinado -->
+        <p id="recombinedFile"></p>
 
-    <!-- Link de descarga del archivo recombinado -->
-    <p th:if="${recombinedFileName}">
-        <a th:href="@{'/download/' + ${recombinedFileName}}" th:text="${recombinedFileName}" download></a>
-    </p>
-
-    <br>
-    <a href="/">Subir otro archivo</a>
+        <br>
+        <a href="/">Subir otro archivo</a>
+    </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            let fileList = document.querySelector("#fileList"); // La lista de archivos
-            let combineButton = document.getElementById("combineButton");
-            let emailButton = document.getElementById("emailButton");
+        // Función para deshabilitar el botón después de hacer clic en Recombinación
+        document.getElementById("mergeForm").addEventListener("submit", function (event) {
+            event.preventDefault(); // Evita recargar la página
 
-            // Verificar si hay al menos un <li> dentro del <ul>
-            if (fileList.children.length > 0) {
-                combineButton.removeAttribute("disabled");
-                emailButton.removeAttribute("disabled");
-            }
+            let combineButton = document.getElementById("combineButton");
+            combineButton.disabled = true; // Deshabilita el botón
+
+            let formData = new FormData();
+            formData.append("originalName", document.getElementById("originalName").value);
+
+            fetch("/merge", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById("message").textContent = data.message;
+                    document.getElementById("message").classList.remove("hidden");
+
+                    let downloadContainer = document.getElementById("recombinedFile");
+                    let recombinedFileLink = document.createElement("a");
+                    recombinedFileLink.href = "/download/" + data.recombinedFileName;
+                    recombinedFileLink.textContent = data.recombinedFileName;
+                    recombinedFileLink.download = true;
+
+                    downloadContainer.innerHTML = "";
+                    downloadContainer.appendChild(recombinedFileLink);
+                } else {
+                    document.getElementById("error").textContent = data.error;
+                    document.getElementById("error").classList.remove("hidden");
+                    combineButton.disabled = false; // Reactivar el botón en caso de error
+                }
+            })
+            .catch(() => {
+                document.getElementById("error").textContent = "Error al conectar con el servidor.";
+                document.getElementById("error").classList.remove("hidden");
+                combineButton.disabled = false; 
+            });
+        });
+
+        // Función para deshabilitar el botón después de hacer clic en Enviar por Correo
+        document.getElementById("emailForm").addEventListener("submit", function (event) {
+            event.preventDefault(); // Evita recargar la página
+
+            let emailButton = document.getElementById("emailButton");
+            emailButton.disabled = true; // Deshabilita el botón
+
+            let formData = new FormData();
+            formData.append("email", document.getElementById("emailInput").value);
+            formData.append("originalName", document.getElementById("emailOriginalName").value);
+
+            fetch("/send-email", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById("message").textContent = "Correo enviado correctamente.";
+                    document.getElementById("message").classList.remove("hidden");
+                } else {
+                    document.getElementById("error").textContent = "Error al enviar el correo.";
+                    document.getElementById("error").classList.remove("hidden");
+                    emailButton.disabled = false; // Reactivar en caso de error
+                }
+            })
+            .catch(() => {
+                document.getElementById("error").textContent = "Error al conectar con el servidor.";
+                document.getElementById("error").classList.remove("hidden");
+                emailButton.disabled = false;
+            });
         });
     </script>
 </body>

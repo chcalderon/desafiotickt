@@ -5,6 +5,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,7 +23,9 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class FileController {
@@ -74,9 +77,9 @@ public class FileController {
     }
 
     @PostMapping("/send-email")
-    public String sendEmail(@RequestParam("email") String recipientEmail,
-                            @RequestParam("originalName") String originalName,
-                            Model model) {
+    public ResponseEntity<Map<String, Object>> sendEmail(@RequestParam("email") String recipientEmail,
+                            @RequestParam("originalName") String originalName) {
+        Map<String, Object> response = new HashMap<>();
         try {
             // Obtener los segmentos generados
             List<File> segments = fileService.getGeneratedSegments(originalName);
@@ -89,24 +92,33 @@ public class FileController {
                     segments
             );
 
-            model.addAttribute("message", "Correo enviado con éxito a " + recipientEmail);
+            response.put("success", true);
+            response.put("message", "Correo enviado con éxito a " + recipientEmail);
+            return ResponseEntity.ok(response);
         } catch (MessagingException e) {
-            model.addAttribute("error", "Error al enviar el correo: " + e.getMessage());
+            response.put("success", false);
+            response.put("error", "Error al recombinar el archivo: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
-        return "result";
     }
 
     @PostMapping("/merge")
-    public String mergeFiles(@RequestParam("originalName") String originalName, Model model) {
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> mergeFiles(@RequestParam("originalName") String originalName) {
+        Map<String, Object> response = new HashMap<>();
         try {
             File mergedFile = fileService.mergeFiles(originalName);
-            model.addAttribute("message", "Archivo recombinado correctamente ");
-            model.addAttribute("recombinedFileName", mergedFile.getName());
+            response.put("success", true);
+            response.put("message", "Archivo recombinado correctamente");
+            response.put("recombinedFileName", mergedFile.getName());
+            return ResponseEntity.ok(response);
         } catch (IOException e) {
-            model.addAttribute("error", "Error al recombinar el archivo: " + e.getMessage());
+            response.put("success", false);
+            response.put("error", "Error al recombinar el archivo: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-        return "result";
     }
+
 
 }
